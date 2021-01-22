@@ -7,6 +7,7 @@
 #include <linux/mm.h>
 #include <linux/dma-mapping.h>
 #include <linux/slab.h>
+#include <asm/uaccess.h>
 #include <linux/sched.h>
 #include <linux/pid.h>
 #include <linux/kallsyms.h>
