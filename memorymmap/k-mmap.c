@@ -140,6 +140,7 @@ static struct file_operations km_ops = {
 
 unsigned int clear_and_return_cr0(void)	
 {
+    TRACE_PRINT();
    	unsigned int cr0 = 0;
    	unsigned int ret;
     /* 前者用在32位系统。后者用在64位系统，本系统64位 */
@@ -155,11 +156,13 @@ unsigned int clear_and_return_cr0(void)
 
 void setback_cr0(unsigned int val)
 {
+    TRACE_PRINT();
     asm volatile ("movq %%rax, %%cr0" :: "a"(val));
 }
 
 static int sys_mycall(void)
 {
+    TRACE_PRINT();
     int ret = 12345;
     printk("syscall success!");
     return ret;
