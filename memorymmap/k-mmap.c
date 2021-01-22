@@ -71,7 +71,7 @@ static int km_get_phyaddr(struct km_umem *umem)
 
     sg_list_start = umem->sg_head.sgl;
     cur_base = addr & PAGE_MASK;
-    while(napges){
+    while(npages){
            ret =  get_user_pages_fast(cur_base,min_t(unsigned long,npages,PAGE_SIZE/sizeof(struct page *)),0,page_list);
            if(ret < 0)
            {
