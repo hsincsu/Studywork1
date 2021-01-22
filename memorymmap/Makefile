@@ -2,6 +2,7 @@
 #Makefile for zcopy-rsockets
 KERNELDIR:=/lib/modules/4.19.0/build/
 PWD:=$(shell pwd)
+EXTRA_CFLAGS= -O0
 
 obj-m := kmmap.o
 kmmap-y := k-mmap.o
