@@ -1,8 +1,5 @@
 #include "k-mmap.h"
 
-MODULE_VERSION("0.0.1");
-MODULE_AUTHOR("HS");
-MODULE_LICENSE("GPL");
 
 /*char dev definition*/
 #define KM_GET_PHYADDR (unsigned int) 0
@@ -160,7 +157,7 @@ void setback_cr0(unsigned int val)
     asm volatile ("movq %%rax, %%cr0" :: "a"(val));
 }
 
-static int sys_mycall(void)
+asmlinkage long sys_mycall(void)
 {
     TRACE_PRINT();
     int ret = 12345;
@@ -207,3 +204,4 @@ static void __exit km_exit(void)
 
 module_init(km_init);
 module_exit(km_exit);
+MODULE_LICENSE("GPL");
