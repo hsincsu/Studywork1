@@ -60,7 +60,7 @@ static int km_get_phyaddr(struct km_umem *umem)
     }
 
     npages = km_umem_num_pages(umem);
-    if(npages == 0 || napges > UINT_MAX){
+    if(npages == 0 || npages > UINT_MAX){
         ret = -EINVAL;
         return ERR_PTR(ret);
     }
@@ -80,7 +80,7 @@ static int km_get_phyaddr(struct km_umem *umem)
            }
 
            umem->npages += ret;
-           cur_base     += ret * PAGE_SIZE；
+           cur_base     += ret * PAGE_SIZE;
            npages       -= ret;
 
            for_each_sg(sg_list_start,sg,ret,i){
