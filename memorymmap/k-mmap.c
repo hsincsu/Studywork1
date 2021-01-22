@@ -21,7 +21,7 @@ static struct class_device *km_device;
 
 
 /*system call function*/
-#define __NR_syscall 335 /*add system call 335*/
+#define __NR_syscall 327 /*add system call 335*/
 unsigned int clear_and_return_cr0(void);
 void setback_cr0(unsigned int val);
 asmlinkage long  sys_mycall(void);
