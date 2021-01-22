@@ -59,10 +59,6 @@ static inline size_t km_umem_num_pages(struct km_umem *umem)
 }
 
 
-unsigned int clear_and_return_cr0(void);
-void setback_cr0(unsigned int val);
-asmlinkage long  sys_mycall(void);
-
 #define DEBUG_TRACE 1
 
 #if DEBUG_TRACE
