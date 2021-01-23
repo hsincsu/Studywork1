@@ -39,6 +39,11 @@ struct km_umem
     struct sg_table sg_head;
 };
 
+struct meminfo{
+    unsigned long addr;
+    unsigned int  length;
+};
+
 static inline unsigned long km_umem_offset(struct km_umem *umem)
 {
     return umem->address & (BIT(umem->page_shift) - 1);
