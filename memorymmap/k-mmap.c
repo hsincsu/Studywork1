@@ -160,15 +160,15 @@ void setback_cr0(unsigned int val)
     asm volatile ("movq %%rax, %%cr0" :: "a"(val));
 }
 
-asmlinkage long sys_mycall(struct meminfo __user *meminfo)
+asmlinkage long sys_mycall(unsigned long p_inuser, unsigned long p_outuser)
 {
     TRACE_PRINT();
     int ret = 12345;
     struct meminfo kmem;
-    if(copy_from_user(&kemm,meminfo,sizeof(struct meminfo)))
-    {printk("copy error!\n");}
+    if(p_inuser)
+        printk("p_inuser:0x%lx,p_outuser:0x%lx\n",p_inuser,p_outuser);
     else
-    printk("syscall success!");
+        printk("syscall error!");
     return ret;
 }
 
