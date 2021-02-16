@@ -24,7 +24,7 @@ static struct class_device *km_device;
 #define __NR_syscall 327 /*add system call 335*/
 unsigned int clear_and_return_cr0(void);
 void setback_cr0(unsigned int val);
-asmlinkage long  sys_mycall(void);
+asmlinkage long  sys_mycall(const struct pt_regs *regs);
 int orig_cr0;
 unsigned long *sys_call_table = 0;
 static int (*anything_saved)(void);
@@ -45,7 +45,9 @@ static int km_get_phyaddr(struct km_umem *umem)
     int ret;
     struct scatterlist *sg, *sg_list_start;
     struct page **page_list;
+    struct vm_area_struct **vma_list;
     int i;
+    struct mm_struct *mm;
 
     TRACE_PRINT();
 
@@ -59,20 +61,31 @@ static int km_get_phyaddr(struct km_umem *umem)
         return ERR_PTR(ret);
     }
 
+    vma_list = (struct vm_area_struct **)__get_free_page(GFP_KERNEL);
+    if(!vma_list)
+    {
+        ret = -ENOMEM;
+        return ERR_PTR(ret);
+    }
     npages = km_umem_num_pages(umem);
     if(npages == 0 || npages > UINT_MAX){
         ret = -EINVAL;
         return ERR_PTR(ret);
     }
     
+    printk("page num:%d\n",npages);
+
     ret = sg_alloc_table(&umem->sg_head,npages,GFP_KERNEL);
     if(ret)
         return ERR_PTR(ret);
 
     sg_list_start = umem->sg_head.sgl;
     cur_base = addr & PAGE_MASK;
+    mm = current->mm;
+    
     while(npages){
-           ret =  get_user_pages_fast(cur_base,min_t(unsigned long,npages,PAGE_SIZE/sizeof(struct page *)),0,page_list);
+           down_read(&mm->mmap_sem);
+           ret =  get_user_pages_longterm(cur_base,min_t(unsigned long,npages,PAGE_SIZE/sizeof(struct page *)),0,page_list,vma_list);
            if(ret < 0)
            {
                ret = -EINVAL;
@@ -85,12 +98,30 @@ static int km_get_phyaddr(struct km_umem *umem)
 
            for_each_sg(sg_list_start,sg,ret,i){
                sg_set_page(sg,page_list[i],PAGE_SIZE,0);
+               sg->dma_address = page_to_phys(sg_page(sg));
+               printk("page%d,paddr:0x%lx\n",i,sg->dma_address);
            }
+           up_read(&mm->mmap_sem);
            sg_list_start = sg;
+    }
+    
+    printk("real get page num:%d\n",umem->npages);
+    /*get page info*/
+    sg_list_start = umem->sg_head.sgl;
+    
+    for_each_sg(sg_list_start,sg,umem->npages,i)
+    {
+        printk("every sg info\n");
+        printk("sg->page_link:0x%lx\n",sg->page_link);
+        printk("sg->offset:0x%lx\n",sg->offset);
+        printk("sg->length:0x%lx\n",sg->length);
+        printk("sg->dma_address:0x%lx\n",sg->dma_address);
+        printk("sg->dma_length:0x%lx\n",sg->dma_length);
     }
     
     ret = 0;
     free_page((unsigned long) page_list);
+    free_page((unsigned long) vma_list);
     return ret;
 
 }
@@ -117,10 +148,8 @@ static long km_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
             umem->length  = info_user.len;
             umem->page_shift = PAGE_SHIFT;
             ret = km_get_phyaddr(umem);
-            if(ret)
-            {
-                kfree(umem);
-            }
+            kfree(umem);
+            
         
 
     }
@@ -160,15 +189,23 @@ void setback_cr0(unsigned int val)
     asm volatile ("movq %%rax, %%cr0" :: "a"(val));
 }
 
-asmlinkage long sys_mycall(unsigned long p_inuser, unsigned long p_outuser)
+asmlinkage long  sys_mycall(const struct pt_regs *regs)
 {
     TRACE_PRINT();
-    int ret = 12345;
-    struct meminfo kmem;
-    if(p_inuser)
-        printk("p_inuser:0x%lx,p_outuser:0x%lx\n",p_inuser,p_outuser);
-    else
-        printk("syscall error!");
+    int ret = 0;
+    struct km_init info_user;
+    struct km_umem *umem;
+    umem = kzalloc(sizeof(*umem),GFP_KERNEL);
+
+    umem->address = regs->di;
+    umem->length  = regs->si;
+    umem->page_shift = PAGE_SHIFT;
+    printk("umem->addr:0x%lx,umem->length:0x%lx\n",umem->address,umem->length);
+    printk("regs->dx:0x%lx,sizeof struct scatterlist:%d\n",regs->dx,sizeof(struct scatterlist));
+    ret = km_get_phyaddr(umem);
+    //copy_to_user(regs->dx,umem,sizeof(*umem));
+    kfree(umem);
+     
     return ret;
 }
 
@@ -192,6 +229,7 @@ static int __init km_init(void)
 
     return 0;
 }
+
 
 static void __exit km_exit(void)
 {

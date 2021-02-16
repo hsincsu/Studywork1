@@ -7,6 +7,8 @@
 #include <linux/mm.h>
 #include <linux/dma-mapping.h>
 #include <linux/slab.h>
+#include <linux/syscalls.h>
+#include <linux/ptrace.h>
 #include <asm/uaccess.h>
 #include <linux/sched.h>
 #include <linux/pid.h>
@@ -36,6 +38,8 @@ struct km_umem
     size_t        length;
     int           page_shift;
     int           npages;
+    int           nmap;
+    
     struct sg_table sg_head;
 };
 
